@@ -6,4 +6,7 @@ cryptography==41.0.7
 qrcode==7.4.2
 Pillow==10.1.0
 razorpay==1.4.1
+
 Werkzeug==3.0.1
+flask
+gunicorn
