@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Booking Details - Hotel Luxe{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1>Booking Details</h1>
+    <p>Reference: {{ booking.booking_reference }}</p>
+</section>
+
+<section class="booking-details-section">
+    <div class="container">
+        <div class="booking-details-container">
+            <!-- Guest Information -->
+            <div class="details-card">
+                <h2>Guest Information</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Guest Name</span>
+                        <span class="info-value">{{ booking.user.full_name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Email</span>
+                        <span class="info-value">{{ booking.user.email }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Phone</span>
+                        <span class="info-value">{{ booking.user.phone }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Room Information -->
+            <div class="details-card">
+                <h2>Room Information</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Room Type</span>
+                        <span class="info-value">{{ booking.room.room_type }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Room Number</span>
+                        <span class="info-value">{{ booking.room.room_number }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Capacity</span>
+                        <span class="info-value">{{ booking.room.capacity }} Guests</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Price per Night</span>
+                        <span class="info-value">₹{{ booking.room.price_per_night }}</span>
+                    </div>
+                </div>
+                
+                {% if booking.room.amenities %}
+                <div class="amenities-list">
+                    <h3>Amenities</h3>
+                    <div class="amenities-tags">
+                        {% set amenities_list = booking.room.amenities|fromjson %}
+                        {% for amenity in amenities_list %}
+                            <span class="amenity-tag">{{ amenity }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Stay Details -->
+            <div class="details-card">
+                <h2>Stay Details</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Check In</span>
+                        <span class="info-value">{{ booking.check_in.strftime('%A, %d %B %Y') }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Check Out</span>
+                        <span class="info-value">{{ booking.check_out.strftime('%A, %d %B %Y') }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Number of Nights</span>
+                        <span class="info-value">{{ (booking.check_out - booking.check_in).days }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Guests</span>
+                        <span class="info-value">{{ booking.guests }}</span>
+                    </div>
+                </div>
+                
+                {% if booking.special_requests %}
+                <div class="special-requests">
+                    <h3>Special Requests</h3>
+                    <p>{{ booking.special_requests }}</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Payment Information -->
+            <div class="details-card">
+                <h2>Payment Information</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Booking Status</span>
+                        <span class="info-value">
+                            <span class="status-badge status-{{ booking.status }}">{{ booking.status|capitalize }}</span>
+                        </span>
+                    </div>
+                    {% if booking.payment %}
+                    <div class="info-item">
+                        <span class="info-label">Payment Status</span>
+                        <span class="info-value">
+                            <span class="status-badge status-{{ booking.payment.payment_status }}">
+                                {{ booking.payment.payment_status|capitalize }}
+                            </span>
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Payment Method</span>
+                        <span class="info-value">{{ booking.payment.payment_method|replace('_', ' ')|title }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Transaction ID</span>
+                        <span class="info-value">{{ booking.payment.transaction_id }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="info-item info-total">
+                        <span class="info-label">Total Amount</span>
+                        <span class="info-value">₹{{ booking.total_price }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="details-actions">
+                <a href="/my-bookings" class="btn btn-secondary">Back to Bookings</a>
+                {% if booking.status not in ['cancelled', 'completed'] %}
+                    <button onclick="cancelBooking({{ booking.id }})" class="btn btn-outline">Cancel Booking</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function cancelBooking(bookingId) {
+    if (!confirm('Are you sure you want to cancel this booking?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/cancel-booking/${bookingId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('Booking cancelled successfully');
+            location.reload();
+        } else {
+            alert(data.message || 'Failed to cancel booking');
+        }
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+    }
+}
+</script>
+{% endblock %}

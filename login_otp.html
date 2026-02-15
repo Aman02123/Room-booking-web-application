@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Hotel Luxe</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 450px;
+            padding: 40px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .logo p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-step {
+            display: none;
+        }
+
+        .form-step.active {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .phone-prefix {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            font-weight: 500;
+        }
+
+        .phone-input {
+            padding-left: 50px;
+        }
+
+        .otp-input-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .otp-digit {
+            width: 50px;
+            height: 60px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 0;
+        }
+
+        .otp-digit:focus {
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #667eea;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #e0e0e0;
+        }
+
+        .timer {
+            text-align: center;
+            margin: 15px 0;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .attempts-info {
+            text-align: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: #fff3cd;
+            border-radius: 8px;
+            color: #856404;
+            font-size: 13px;
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .links {
+            text-align: center;
+            margin-top: 25px;
+        }
+
+        .links a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .links a:hover {
+            text-decoration: underline;
+        }
+
+        .otp-info {
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+
+        .otp-info strong {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>🏨 Hotel Luxe</h1>
+            <p>Login with Mobile Number</p>
+        </div>
+
+        <div id="messageContainer"></div>
+
+        <!-- Step 1: Enter Phone Number -->
+        <div id="step1" class="form-step active">
+            <form id="phoneForm">
+                <div class="form-group">
+                    <label for="phone">Mobile Number</label>
+                    <div class="input-group">
+                        <span class="phone-prefix">+91</span>
+                        <input 
+                            type="tel" 
+                            id="phone" 
+                            class="phone-input"
+                            placeholder="Enter 10-digit mobile number"
+                            pattern="[0-9]{10}"
+                            maxlength="10"
+                            required
+                            autocomplete="tel"
+                            autofocus
+                        >
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" id="sendOtpBtn">
+                    Send OTP
+                </button>
+            </form>
+            <div class="links">
+                <p>Don't have an account? <a href="/register">Register here</a></p>
+                <p style="margin-top: 10px;"><a href="/">← Back to Home</a></p>
+            </div>
+        </div>
+
+        <!-- Step 2: Enter OTP -->
+        <div id="step2" class="form-step">
+            <form id="otpForm">
+                <div class="form-group">
+                    <label>Enter Verification Code</label>
+                    <p class="otp-info">
+                        Code sent to <strong id="phoneDisplay"></strong>
+                    </p>
+                    <div class="otp-input-container">
+                        <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" required autocomplete="off">
+                        <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" required autocomplete="off">
+                        <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" required autocomplete="off">
+                        <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" required autocomplete="off">
+                        <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" required autocomplete="off">
+                        <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" required autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="timer" id="timerDisplay"></div>
+                <div id="attemptsInfo"></div>
+
+                <button type="submit" class="btn btn-primary" id="verifyOtpBtn">
+                    Verify & Login
+                </button>
+                <button type="button" class="btn btn-secondary" id="resendOtpBtn" disabled>
+                    Resend OTP
+                </button>
+                <button type="button" class="btn btn-secondary" id="changeNumberBtn">
+                    Change Number
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let phoneNumber = '';
+        let otpTimer = null;
+        let remainingTime = 600; // 10 minutes
+        let attemptsRemaining = 3;
+
+        // Phone form submission
+        document.getElementById('phoneForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const phone = document.getElementById('phone').value.trim();
+            
+            if (phone.length !== 10 || !/^\d+$/.test(phone)) {
+                showMessage('Please enter a valid 10-digit mobile number', 'error');
+                return;
+            }
+
+            phoneNumber = phone;
+            await sendOTP();
+        });
+
+        // Send OTP
+        async function sendOTP() {
+            const sendBtn = document.getElementById('sendOtpBtn');
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Sending OTP...';
+
+            try {
+                const response = await fetch('/send-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        phone: phoneNumber,
+                        purpose: 'login'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(`OTP sent to +91${phoneNumber}`, 'success');
+                    attemptsRemaining = data.attempts_remaining || 3;
+                    showStep2();
+                    startTimer(data.expires_in * 60 || 600);
+                } else {
+                    showMessage(data.message, 'error');
+                    sendBtn.disabled = false;
+                    sendBtn.textContent = 'Send OTP';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('Error sending OTP. Please try again.', 'error');
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send OTP';
+            }
+        }
+
+        // Show step 2
+        function showStep2() {
+            document.getElementById('step1').classList.remove('active');
+            document.getElementById('step2').classList.add('active');
+            document.getElementById('phoneDisplay').textContent = `+91 ${phoneNumber}`;
+            document.querySelectorAll('.otp-digit')[0].focus();
+            updateAttemptsInfo();
+        }
+
+        // OTP input handling
+        const otpInputs = document.querySelectorAll('.otp-digit');
+        
+        otpInputs.forEach((input, index) => {
+            // Auto-advance to next
+            input.addEventListener('input', (e) => {
+                if (e.target.value && index < otpInputs.length - 1) {
+                    otpInputs[index + 1].focus();
+                }
+            });
+
+            // Backspace to previous
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                    otpInputs[index - 1].focus();
+                }
+            });
+
+            // Paste support
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const pastedData = e.clipboardData.getData('text').slice(0, 6);
+                pastedData.split('').forEach((char, i) => {
+                    if (otpInputs[i] && /^\d$/.test(char)) {
+                        otpInputs[i].value = char;
+                    }
+                });
+                const lastIndex = Math.min(pastedData.length, 6) - 1;
+                if (otpInputs[lastIndex]) otpInputs[lastIndex].focus();
+            });
+        });
+
+        // Verify OTP
+        document.getElementById('otpForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const otp = Array.from(otpInputs).map(input => input.value).join('');
+            
+            if (otp.length !== 6) {
+                showMessage('Please enter complete 6-digit OTP', 'error');
+                return;
+            }
+
+            const verifyBtn = document.getElementById('verifyOtpBtn');
+            verifyBtn.disabled = true;
+            verifyBtn.textContent = 'Verifying...';
+
+            try {
+                const response = await fetch('/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        phone: phoneNumber,
+                        otp: otp,
+                        purpose: 'login'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('✅ Login successful! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1500);
+                } else {
+                    showMessage(data.message, 'error');
+                    otpInputs.forEach(input => input.value = '');
+                    otpInputs[0].focus();
+                    verifyBtn.disabled = false;
+                    verifyBtn.textContent = 'Verify & Login';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('Verification failed. Please try again.', 'error');
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = 'Verify & Login';
+            }
+        });
+
+        // Resend OTP
+        document.getElementById('resendOtpBtn').addEventListener('click', async () => {
+            clearInterval(otpTimer);
+            otpInputs.forEach(input => input.value = '');
+            otpInputs[0].focus();
+            await sendOTP();
+        });
+
+        // Change number
+        document.getElementById('changeNumberBtn').addEventListener('click', () => {
+            clearInterval(otpTimer);
+            document.getElementById('step2').classList.remove('active');
+            document.getElementById('step1').classList.add('active');
+            document.getElementById('phone').value = '';
+            document.getElementById('phone').focus();
+            document.getElementById('sendOtpBtn').disabled = false;
+            document.getElementById('sendOtpBtn').textContent = 'Send OTP';
+            otpInputs.forEach(input => input.value = '');
+        });
+
+        // Timer
+        function startTimer(seconds) {
+            remainingTime = seconds;
+            const resendBtn = document.getElementById('resendOtpBtn');
+            resendBtn.disabled = true;
+
+            otpTimer = setInterval(() => {
+                remainingTime--;
+                
+                const minutes = Math.floor(remainingTime / 60);
+                const secs = remainingTime % 60;
+                document.getElementById('timerDisplay').textContent = 
+                    `Code expires in ${minutes}:${secs.toString().padStart(2, '0')}`;
+
+                if (remainingTime <= 0) {
+                    clearInterval(otpTimer);
+                    document.getElementById('timerDisplay').textContent = '⚠️ Code expired';
+                    resendBtn.disabled = false;
+                } else if (remainingTime <= 540) { // Enable resend after 1 minute
+                    resendBtn.disabled = false;
+                }
+            }, 1000);
+        }
+
+        // Update attempts info
+        function updateAttemptsInfo() {
+            const info = document.getElementById('attemptsInfo');
+            if (attemptsRemaining <= 2) {
+                info.innerHTML = `<div class="attempts-info">⚠️ ${attemptsRemaining} OTP attempts remaining today</div>`;
+            } else {
+                info.innerHTML = '';
+            }
+        }
+
+        // Show message
+        function showMessage(message, type) {
+            const container = document.getElementById('messageContainer');
+            container.innerHTML = `<div class="message ${type}">${message}</div>`;
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    container.innerHTML = '';
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+</html>

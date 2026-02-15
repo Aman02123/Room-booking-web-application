@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Hotel Luxe{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1>Admin Dashboard</h1>
+    <p>Manage your hotel operations</p>
+</section>
+
+<section class="admin-section">
+    <div class="container">
+        <!-- Statistics Cards -->
+        <div class="admin-stats">
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <h3>Total Bookings</h3>
+                    <p class="stat-value">{{ total_bookings }}</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-content">
+                    <h3>Pending Bookings</h3>
+                    <p class="stat-value">{{ pending_bookings }}</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">✓</div>
+                <div class="stat-content">
+                    <h3>Confirmed Bookings</h3>
+                    <p class="stat-value">{{ confirmed_bookings }}</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-content">
+                    <h3>Total Revenue</h3>
+                    <p class="stat-value">₹{{ "%.2f"|format(total_revenue) }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Information Card -->
+       <section class="admin-table-section" style="margin-top: 30px;">
+    <div class="container">
+        <h2 style="margin-bottom: 20px;">Recent Bookings & Customer Information</h2>
+        <div style="overflow-x: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <table style="width: 100%; border-collapse: collapse; min-width: 800px;">
+                <thead>
+                    <tr style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6; text-align: left;">
+                        <th style="padding: 12px;">Ref ID</th>
+                        <th style="padding: 12px;">Customer Name</th>
+                        <th style="padding: 12px;">Contact Info</th>
+                        <th style="padding: 12px;">Room</th>
+                        <th style="padding: 12px;">Stay Dates</th>
+                        <th style="padding: 12px;">Total</th>
+                        <th style="padding: 12px;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in bookings %}
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 12px; font-family: monospace;">{{ booking.booking_reference }}</td>
+                        <td style="padding: 12px;"><strong>{{ booking.user.full_name }}</strong></td>
+                        <td style="padding: 12px;">
+                            <div style="font-size: 0.9em;">📧 {{ booking.user.email }}</div>
+                            <div style="font-size: 0.9em;">📞 {{ booking.user.phone }}</div>
+                        </td>
+                        <td style="padding: 12px;">
+                            {{ booking.room.room_type }}<br>
+                            <small>Room: {{ booking.room.room_number }}</small>
+                        </td>
+                        <td style="padding: 12px;">
+                            <small>In: {{ booking.check_in }}</small><br>
+                            <small>Out: {{ booking.check_out }}</small>
+                        </td>
+                        <td style="padding: 12px;">₹{{ "%.2f"|format(booking.total_price) }}</td>
+                        <td style="padding: 12px;">
+                            {% if booking.status == 'confirmed' %}
+                                <span style="color: #28a745; background: #e8f5e9; padding: 4px 8px; border-radius: 4px; font-size: 0.8em;">Confirmed</span>
+                            {% elif booking.status == 'pending' %}
+                                <span style="color: #f39c12; background: #fef5e7; padding: 4px 8px; border-radius: 4px; font-size: 0.8em;">Pending</span>
+                            {% else %}
+                                <span style="color: #dc3545; background: #fdecea; padding: 4px 8px; border-radius: 4px; font-size: 0.8em;">{{ booking.status }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" style="padding: 20px; text-align: center; color: #777;">No bookings found in the database.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+        </div>
+    </div>
+</section>
+{% endblock %}

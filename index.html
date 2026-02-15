@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+        <h1 class="hero-title">Welcome to Unparalleled Luxury</h1>
+        <p class="hero-subtitle">Where every moment becomes a cherished memory</p>
+        <a href="/rooms" class="btn btn-primary btn-large">Explore Our Rooms</a>
+    </div>
+    <div class="scroll-indicator">
+        <span>Scroll to discover</span>
+        <div class="scroll-arrow"></div>
+    </div>
+</section>
+
+<!-- Quick Booking Section -->
+<section class="booking-quick">
+    <div class="container">
+        <div class="quick-booking-card">
+            <h2>Find Your Perfect Stay</h2>
+            <form id="quickSearchForm" class="quick-booking-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Check In</label>
+                        <input type="date" id="checkIn" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Check Out</label>
+                        <input type="date" id="checkOut" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Room Type</label>
+                        <select id="roomType" class="form-input">
+                            <option value="">All Types</option>
+                            <option value="Standard">Standard</option>
+                            <option value="Deluxe">Deluxe</option>
+                            <option value="Suite">Suite</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">Search Rooms</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features">
+    <div class="container">
+        <h2 class="section-title">Why Choose Hotel Luxe</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">✦</div>
+                <h3>Premium Comfort</h3>
+                <p>Indulge in meticulously designed rooms with world-class amenities</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">◇</div>
+                <h3>24/7 Service</h3>
+                <p>Our dedicated team ensures your every need is met around the clock</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">✧</div>
+                <h3>Prime Location</h3>
+                <p>Situated in the heart of the city with easy access to attractions</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">◈</div>
+                <h3>Gourmet Dining</h3>
+                <p>Experience culinary excellence at our award-winning restaurants</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="container">
+        <div class="cta-content">
+            <h2>Ready to Experience Luxury?</h2>
+            <p>Book your stay now and enjoy exclusive benefits</p>
+            <a href="/rooms" class="btn btn-secondary btn-large">View All Rooms</a>
+        </div>
+    </div>
+</section>
+
+<!-- Search Results Modal -->
+<div id="searchResults" class="modal" style="display: none;">
+    <div class="modal-overlay" onclick="closeSearchResults()"></div>
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeSearchResults()">&times;</button>
+        <h2>Available Rooms</h2>
+        <div id="resultsContainer" class="results-container"></div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Set minimum date to today
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('checkIn').setAttribute('min', today);
+    document.getElementById('checkOut').setAttribute('min', today);
+    
+    // Update checkout min date when checkin changes
+    document.getElementById('checkIn').addEventListener('change', function() {
+        const checkinDate = new Date(this.value);
+        checkinDate.setDate(checkinDate.getDate() + 1);
+        const minCheckout = checkinDate.toISOString().split('T')[0];
+        document.getElementById('checkOut').setAttribute('min', minCheckout);
+    });
+});
+
+// Quick search form
+document.getElementById('quickSearchForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const checkIn = document.getElementById('checkIn').value;
+    const checkOut = document.getElementById('checkOut').value;
+    const roomType = document.getElementById('roomType').value;
+    
+    if (!checkIn || !checkOut) {
+        alert('Please select check-in and check-out dates');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/check-availability', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                check_in: checkIn,
+                check_out: checkOut,
+                room_type: roomType
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            displaySearchResults(data.rooms, checkIn, checkOut);
+        } else {
+            alert('Error searching rooms');
+        }
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+    }
+});
+
+function displaySearchResults(rooms, checkIn, checkOut) {
+    const container = document.getElementById('resultsContainer');
+    
+    if (rooms.length === 0) {
+        container.innerHTML = '<p class="no-results">No rooms available for selected dates.</p>';
+    } else {
+        container.innerHTML = rooms.map(room => `
+            <div class="result-card">
+                <div class="result-image" style="background-image: url('${room.image_url}')"></div>
+                <div class="result-info">
+                    <h3>${room.room_type} - Room ${room.room_number}</h3>
+                    <p>${room.description}</p>
+                    <div class="result-amenities">
+                        ${room.amenities.map(a => `<span class="amenity-tag">${a}</span>`).join('')}
+                    </div>
+                    <div class="result-footer">
+                        <div class="result-price">₹${room.price_per_night}/night</div>
+                        <button onclick="bookRoom(${room.id}, '${checkIn}', '${checkOut}')" class="btn btn-primary btn-small">Book Now</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    document.getElementById('searchResults').style.display = 'flex';
+}
+
+function closeSearchResults() {
+    document.getElementById('searchResults').style.display = 'none';
+}
+
+function bookRoom(roomId, checkIn, checkOut) {
+    {% if session.user_id %}
+        window.location.href = `/book?room_id=${roomId}&check_in=${checkIn}&check_out=${checkOut}`;
+    {% else %}
+        alert('Please login to book a room');
+        window.location.href = '/login';
+    {% endif %}
+}
+</script>
+{% endblock %}

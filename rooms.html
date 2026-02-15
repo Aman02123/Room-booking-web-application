@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Our Rooms - Hotel Luxe{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <h1>Our Exquisite Rooms</h1>
+    <p>Discover your perfect sanctuary</p>
+</section>
+
+<!-- Rooms Section -->
+<section class="rooms-section">
+    <div class="container">
+        <div class="rooms-grid">
+            {% for room in rooms %}
+            <div class="room-card">
+                <div class="room-image" style="background-image: url('{{ room.image_url }}')">
+                    <div class="room-badge">{{ room.room_type }}</div>
+                </div>
+                <div class="room-content">
+                    <h3 class="room-title">{{ room.room_type }} Room</h3>
+                    <p class="room-number">Room {{ room.room_number }}</p>
+                    <p class="room-description">{{ room.description }}</p>
+                    
+                    <div class="room-amenities">
+                        {% if room.amenities %}
+                            {% set amenities_list = room.amenities|fromjson %}
+                            {% for amenity in amenities_list %}
+                                <span class="amenity-badge">{{ amenity }}</span>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="room-footer">
+                        <div class="room-details">
+                            <span class="room-capacity">⚬ Up to {{ room.capacity }} guests</span>
+                            <span class="room-price">₹{{ room.price_per_night }}<span>/night</span></span>
+                        </div>
+                        <button onclick="openBookingModal({{ room.id }}, '{{ room.room_type }}', {{ room.price_per_night }})" class="btn btn-primary">Reserve Now</button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Booking Modal -->
+<div id="bookingModal" class="modal" style="display: none;">
+    <div class="modal-overlay" onclick="closeBookingModal()"></div>
+    <div class="modal-content modal-booking">
+        <button class="modal-close" onclick="closeBookingModal()">&times;</button>
+        <h2>Book Your Stay</h2>
+        <p id="modalRoomType" class="modal-subtitle"></p>
+        
+        <form id="bookingForm" class="booking-form">
+            <input type="hidden" id="selectedRoomId">
+            
+            <div class="form-group">
+                <label>Check In Date</label>
+                <input type="date" id="bookCheckIn" class="form-input" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Check Out Date</label>
+                <input type="date" id="bookCheckOut" class="form-input" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Number of Guests</label>
+                <input type="number" id="guests" class="form-input" min="1" max="4" value="1" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Special Requests (Optional)</label>
+                <textarea id="specialRequests" class="form-input" rows="3" placeholder="Any special requirements..."></textarea>
+            </div>
+            
+            <div id="priceCalculation" class="price-calculation"></div>
+            
+            <button type="submit" class="btn btn-primary btn-full">Proceed to Payment</button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedRoom = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    const checkInInput = document.getElementById('bookCheckIn');
+    const checkOutInput = document.getElementById('bookCheckOut');
+    
+    if (checkInInput) {
+        checkInInput.setAttribute('min', today);
+        checkOutInput.setAttribute('min', today);
+        
+        checkInInput.addEventListener('change', function() {
+            const checkinDate = new Date(this.value);
+            checkinDate.setDate(checkinDate.getDate() + 1);
+            const minCheckout = checkinDate.toISOString().split('T')[0];
+            checkOutInput.setAttribute('min', minCheckout);
+            calculatePrice();
+        });
+        
+        checkOutInput.addEventListener('change', calculatePrice);
+    }
+});
+
+function openBookingModal(roomId, roomType, pricePerNight) {
+    selectedRoom = { id: roomId, type: roomType, price: pricePerNight };
+    
+    document.getElementById('selectedRoomId').value = roomId;
+    document.getElementById('modalRoomType').textContent = roomType + ' Room';
+    document.getElementById('bookingModal').style.display = 'flex';
+}
+
+function closeBookingModal() {
+    document.getElementById('bookingModal').style.display = 'none';
+}
+
+function calculatePrice() {
+    const checkIn = document.getElementById('bookCheckIn').value;
+    const checkOut = document.getElementById('bookCheckOut').value;
+    
+    if (checkIn && checkOut && selectedRoom.price) {
+        const date1 = new Date(checkIn);
+        const date2 = new Date(checkOut);
+        const nights = Math.ceil((date2 - date1) / (1000 * 60 * 60 * 24));
+        
+        if (nights > 0) {
+            const totalPrice = nights * selectedRoom.price;
+            document.getElementById('priceCalculation').innerHTML = `
+                <div class="price-breakdown">
+                    <div class="price-row">
+                        <span>${nights} night(s) × ₹${selectedRoom.price}</span>
+                        <span>₹${totalPrice}</span>
+                    </div>
+                    <div class="price-row price-total">
+                        <span>Total Amount</span>
+                        <span>₹${totalPrice}</span>
+                    </div>
+                </div>
+            `;
+        }
+    }
+}
+
+document.getElementById('bookingForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    {% if not session.user_id %}
+        alert('Please login to book a room');
+        window.location.href = '/login';
+        return;
+    {% endif %}
+    
+    const bookingData = {
+        room_id: parseInt(document.getElementById('selectedRoomId').value),
+        check_in: document.getElementById('bookCheckIn').value,
+        check_out: document.getElementById('bookCheckOut').value,
+        guests: parseInt(document.getElementById('guests').value),
+        special_requests: document.getElementById('specialRequests').value
+    };
+    
+    try {
+        const response = await fetch('/book', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(bookingData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            window.location.href = `/payment/${data.booking_id}`;
+        } else {
+            alert(data.message || 'Booking failed. Please try again.');
+        }
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+    }
+});
+</script>
+{% endblock %}
